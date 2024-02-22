@@ -152,7 +152,9 @@ pub fn search<Search: SearchType>(
     We also use the best move from the transposition table
     to help with move ordering
     */
+    let mut tt_pv = false;
     if let Some(entry) = tt_entry {
+        tt_pv = entry.entry_type() == EntryType::Exact;       
         thread.tt_hits += 1;
         best_move = Some(entry.table_move());
         if !Search::PV && entry.depth() >= depth {
@@ -461,6 +463,11 @@ pub fn search<Search: SearchType>(
             if !Search::PV {
                 reduction += 1;
             };
+            if let Some(entry) = tt_entry {
+                if tt_pv && entry.score() > alpha {
+                    reduction -= 1;
+                }
+            }
             if !improving {
                 reduction += 1;
             }
