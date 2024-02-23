@@ -153,7 +153,7 @@ pub fn search<Search: SearchType>(
     */
     let mut tt_pv = false;
     if let Some(entry) = tt_entry {
-        tt_pv = entry.is_pv;
+        tt_pv = entry.is_pv || Search::PV;
         thread.tt_hits += 1;
         best_move = Some(entry.table_move);
         if !Search::PV && entry.depth >= depth {
