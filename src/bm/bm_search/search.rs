@@ -197,7 +197,7 @@ pub fn search<Search: SearchType>(
     };
 
     let (_, nstm_threats) = pos.threats();
-    if !(Search::PV || tt_pv) && !in_check && skip_move.is_none() {
+    if !(Search::PV || tt_pv) && !in_check && skip_move.is_none() { 
         /*
         Reverse Futility Pruning:
         If in a non PV node and evaluation is higher than beta + a depth dependent margin
