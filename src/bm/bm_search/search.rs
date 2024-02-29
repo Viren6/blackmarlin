@@ -151,7 +151,9 @@ pub fn search<Search: SearchType>(
     We also use the best move from the transposition table
     to help with move ordering
     */
+    let mut tt_pv = false;
     if let Some(entry) = tt_entry {
+        tt_pv = entry.is_pv;
         thread.tt_hits += 1;
         best_move = Some(entry.table_move);
         if !Search::PV && entry.depth >= depth {
@@ -195,7 +197,7 @@ pub fn search<Search: SearchType>(
     };
 
     let (_, nstm_threats) = pos.threats();
-    if !Search::PV && !in_check && skip_move.is_none() {
+    if !(Search::PV || tt_pv) && !in_check && skip_move.is_none() {
         /*
         Reverse Futility Pruning:
         If in a non PV node and evaluation is higher than beta + a depth dependent margin
