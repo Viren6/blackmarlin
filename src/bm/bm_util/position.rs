@@ -98,14 +98,15 @@ impl Position {
         true
     }
 
-    /// Makes move, updates accumulators and calculates threats
-    /// - Expensive function, only use if the move is going to be searched
-    pub fn make_move(&mut self, make_move: Move) {
+    /// See [Position::make_move]
+    /// - Runs post_make after making the move, before updating the neural network
+    pub fn make_move_fetch<F: Fn(&Board)>(&mut self, make_move: Move, post_make: F) {
         let old_board = self.current.clone();
         let old_w_threats = self.w_threats;
         let old_b_threats = self.b_threats;
 
         self.current.play_unchecked(make_move);
+        post_make(&self.current);
         (self.w_threats, self.b_threats) = threats(&self.current);
 
         self.evaluator.make_move(
@@ -120,6 +121,12 @@ impl Position {
 
         self.boards.push(old_board);
         self.threats.push((old_w_threats, old_b_threats));
+    }
+
+    /// Makes move, updates accumulators and calculates threats
+    /// - Expensive function, only use if the move is going to be searched
+    pub fn make_move(&mut self, make_move: Move) {
+        self.make_move_fetch(make_move, |_| {});
     }
 
     /// Takes back one (move)[Self::make_move]
@@ -146,13 +153,14 @@ impl Position {
     /// - Value may vary depending on position and root evaluation
     /// - Avoid storing, instead recalculate for a given position
     pub fn aggression(&self, stm: Color, root_eval: Evaluation) -> i16 {
-        let piece_cnt = self.board().occupied().len() as i16;
+        let piece_cnt = self.board().occupied().len() - self.board().pieces(Piece::Pawn).len();
+        let scale = 2 * piece_cnt as i16;
 
-        let clamped_eval = root_eval.raw().clamp(-100, 100);
-        match self.board().side_to_move() == stm {
-            true => piece_cnt * clamped_eval / 50,
-            false => -piece_cnt * clamped_eval / 50,
-        }
+        let clamped_eval = root_eval.raw().clamp(-200, 200);
+        (match self.board().side_to_move() == stm {
+            true => scale * clamped_eval,
+            false => -scale * clamped_eval,
+        }) / 100
     }
 
     /// Calculates NN evaluation + FRC bonus
