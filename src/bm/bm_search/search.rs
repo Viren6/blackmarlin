@@ -463,6 +463,11 @@ pub fn search<Search: SearchType>(
             if !Search::PV {
                 reduction += 1;
             };
+            if let Some(entry) = tt_entry {
+                if tt_pv && entry.score > alpha {
+                    reduction -= 1;
+                }
+            }
             if !improving {
                 reduction += 1;
             }
